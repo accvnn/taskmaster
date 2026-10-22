@@ -1,6 +1,6 @@
 // Service worker tối giản: chỉ lưu "vỏ" app (trang mở, icon) để app mở nhanh và báo lỗi mạng gọn gàng.
 // Dữ liệu TaskMaster vẫn luôn lấy trực tiếp từ Google Apps Script, không lưu cache.
-const CACHE = 'taskmaster-shell-v6';
+const CACHE = 'taskmaster-shell-v7';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-32.png'];
 
@@ -18,8 +18,9 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // không đụng tới Google
   // ⚡ Dùng ngay bản đã lưu (mở tức thì), đồng thời tải bản mới ngầm để lần sau cập nhật
-  const isPage = e.request.mode === 'navigate';
-  const key = isPage ? './index.html' : e.request;
+  // Trang app chính (/taskmaster/ hoặc index.html) dùng chung 1 bản lưu; các trang khác (vd /installapp) lưu riêng
+  const isAppShell = e.request.mode === 'navigate' && (/\/taskmaster\/$/.test(url.pathname) || /\/index\.html$/.test(url.pathname));
+  const key = isAppShell ? './index.html' : e.request;
   const network = fetch(e.request)
     .then((res) => {
       if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(key, copy)); }
@@ -28,7 +29,7 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(key, { ignoreSearch: true })
       .then((cached) => cached || network)
-      .catch(() => caches.match('./index.html'))
+      .catch(() => caches.match(isAppShell ? './index.html' : e.request, { ignoreSearch: true }))
   );
   e.waitUntil(network.catch(() => {}));
 });

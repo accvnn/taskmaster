@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cài ứng dụng TaskMaster</title>
+  <meta name="description" content="Cài TaskMaster – VietNamNet lên điện thoại và máy tính">
+  <meta name="theme-color" content="#DC2626">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="TaskMaster">
+  <meta property="og:title" content="Cài ứng dụng TaskMaster">
+  <meta property="og:description" content="Quản lý công việc VietNamNet – cài 1 chạm lên điện thoại">
+  <meta property="og:image" content="https://accvnn.github.io/taskmaster/icon-512.png">
+  <style>
+    :root { --red:#DC2626; --red-d:#B91C1C; --bg:#F8FAFC; --card:#fff; --text:#0F172A; --muted:#64748B; --line:#E2E8F0; --ok:#16A34A; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; background:var(--bg); color:var(--text);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; -webkit-text-size-adjust:100%; }
+    main { max-width:440px; margin:0 auto; padding:32px 16px calc(120px + env(safe-area-inset-bottom)); text-align:center; }
+    .icon { width:96px; height:96px; border-radius:22px; box-shadow:0 10px 30px rgba(220,38,38,.25); }
+    h1 { font-size:24px; margin:16px 0 4px; }
+    .sub { color:var(--muted); margin:0 0 24px; font-size:15px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; text-align:left; margin-bottom:16px; }
+    .btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:52px; border:0; border-radius:14px;
+      background:var(--red); color:#fff; font-size:17px; font-weight:700; cursor:pointer; text-decoration:none; }
+    .btn:active { background:var(--red-d); }
+    .btn.ghost { background:#fff; color:var(--text); border:1px solid var(--line); font-weight:600; font-size:15px; min-height:46px; margin-top:10px; }
+    .btn[disabled] { opacity:.55; cursor:default; }
+    ol.steps { list-style:none; padding:0; margin:0; counter-reset:s; }
+    ol.steps li { counter-increment:s; display:flex; gap:12px; align-items:flex-start; padding:10px 0; font-size:16px; line-height:1.45; }
+    ol.steps li + li { border-top:1px dashed var(--line); }
+    ol.steps li::before { content:counter(s); flex:0 0 28px; height:28px; border-radius:50%; background:#FEE2E2; color:var(--red);
+      font-weight:800; display:flex; align-items:center; justify-content:center; font-size:14px; }
+    .ico { display:inline-flex; vertical-align:-4px; width:22px; height:22px; color:#0A84FF; }
+    .hint { font-size:13px; color:var(--muted); margin-top:8px; }
+    .done { color:var(--ok); font-weight:700; font-size:17px; }
+    .warn { background:#FEF3C7; border-color:#FDE68A; }
+    .qr { display:flex; gap:16px; align-items:center; }
+    .qr svg { flex:0 0 auto; border-radius:8px; border:1px solid var(--line); }
+    .hide { display:none !important; }
+    #arrow { position:fixed; left:50%; bottom:calc(8px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+      color:var(--red); animation:bob 1s ease-in-out infinite; pointer-events:none; }
+    #arrow span { display:block; font-size:13px; font-weight:700; background:var(--red); color:#fff; border-radius:999px; padding:6px 12px; margin-bottom:4px; white-space:nowrap; }
+    @keyframes bob { 50% { transform:translate(-50%, 8px); } }
+    @media (prefers-reduced-motion: reduce) { #arrow { animation:none; } }
+  </style>
+</head>
+<body>
+<main>
+  <img class="icon" src="icon-192.png" alt="TaskMaster">
+  <h1>TaskMaster</h1>
+  <p class="sub">Quản lý công việc · VietNamNet JSC</p>
+
+  <!-- Đang mở trong Zalo / Facebook / Messenger... -->
+  <section id="inapp" class="card warn hide">
+    <b>Mở bằng trình duyệt để cài</b>
+    <p style="margin:6px 0 12px;font-size:15px" id="inappMsg">Ứng dụng Zalo/Facebook không cho cài app.</p>
+    <a class="btn" id="openChrome" href="#">Mở bằng Chrome</a>
+    <button class="btn ghost" id="copyLink" type="button">Chép link</button>
+  </section>
+
+  <!-- Android / máy tính: 1 chạm -->
+  <section id="oneTap" class="hide">
+    <button class="btn" id="installBtn" type="button" disabled>Đang chuẩn bị…</button>
+    <p class="hint" id="oneTapHint">Bấm để cài – icon TaskMaster sẽ có trên màn hình chính.</p>
+  </section>
+
+  <!-- Android / máy tính khi trình duyệt không bật hộp thoại cài -->
+  <section id="manual" class="card hide">
+    <ol class="steps" id="manualSteps"></ol>
+  </section>
+
+  <!-- iPhone / iPad -->
+  <section id="ios" class="card hide">
+    <ol class="steps">
+      <li><div>Bấm nút <b>Chia sẻ</b>
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+        ở thanh dưới Safari <span class="hint" style="display:block;margin:2px 0 0">(iOS mới: bấm <b>•••</b> trước rồi chọn Chia sẻ)</span></div></li>
+      <li><div>Kéo xuống, chọn <b>Thêm vào MH chính</b>
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></div></li>
+      <li><div>Bấm <b>Thêm</b> ở góc trên – xong!</div></li>
+    </ol>
+    <p class="hint" id="iosNotSafari"></p>
+  </section>
+
+  <section id="installed" class="card hide" style="text-align:center">
+    <p class="done" style="margin:0 0 12px">✓ Đã cài TaskMaster</p>
+    <a class="btn" href="./">Mở TaskMaster</a>
+  </section>
+
+  <!-- Máy tính: quét để cài lên điện thoại -->
+  <section id="qrBox" class="card hide">
+    <div class="qr">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" shape-rendering="crispEdges" width="168" height="168" role="img" aria-label="Mã QR cài TaskMaster"><rect width="35" height="35" fill="#fff"/><path d="M1 1h1v1h-1zM2 1h1v1h-1zM3 1h1v1h-1zM4 1h1v1h-1zM5 1h1v1h-1zM6 1h1v1h-1zM7 1h1v1h-1zM9 1h1v1h-1zM11 1h1v1h-1zM13 1h1v1h-1zM15 1h1v1h-1zM16 1h1v1h-1zM17 1h1v1h-1zM18 1h1v1h-1zM19 1h1v1h-1zM21 1h1v1h-1zM24 1h1v1h-1zM27 1h1v1h-1zM28 1h1v1h-1zM29 1h1v1h-1zM30 1h1v1h-1zM31 1h1v1h-1zM32 1h1v1h-1zM33 1h1v1h-1zM1 2h1v1h-1zM7 2h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM13 2h1v1h-1zM17 2h1v1h-1zM18 2h1v1h-1zM20 2h1v1h-1zM21 2h1v1h-1zM25 2h1v1h-1zM27 2h1v1h-1zM33 2h1v1h-1zM1 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM5 3h1v1h-1zM7 3h1v1h-1zM10 3h1v1h-1zM13 3h1v1h-1zM14 3h1v1h-1zM17 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM25 3h1v1h-1zM27 3h1v1h-1zM29 3h1v1h-1zM30 3h1v1h-1zM31 3h1v1h-1zM33 3h1v1h-1zM1 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM5 4h1v1h-1zM7 4h1v1h-1zM9 4h1v1h-1zM11 4h1v1h-1zM15 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM21 4h1v1h-1zM25 4h1v1h-1zM27 4h1v1h-1zM29 4h1v1h-1zM30 4h1v1h-1zM31 4h1v1h-1zM33 4h1v1h-1zM1 5h1v1h-1zM3 5h1v1h-1zM4 5h1v1h-1zM5 5h1v1h-1zM7 5h1v1h-1zM9 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM15 5h1v1h-1zM18 5h1v1h-1zM19 5h1v1h-1zM20 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM23 5h1v1h-1zM24 5h1v1h-1zM27 5h1v1h-1zM29 5h1v1h-1zM30 5h1v1h-1zM31 5h1v1h-1zM33 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM9 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM17 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM27 6h1v1h-1zM33 6h1v1h-1zM1 7h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM4 7h1v1h-1zM5 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h1v1h-1zM21 7h1v1h-1zM23 7h1v1h-1zM25 7h1v1h-1zM27 7h1v1h-1zM28 7h1v1h-1zM29 7h1v1h-1zM30 7h1v1h-1zM31 7h1v1h-1zM32 7h1v1h-1zM33 7h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM22 8h1v1h-1zM23 8h1v1h-1zM24 8h1v1h-1zM1 9h1v1h-1zM5 9h1v1h-1zM7 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM18 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM25 9h1v1h-1zM26 9h1v1h-1zM27 9h1v1h-1zM28 9h1v1h-1zM29 9h1v1h-1zM30 9h1v1h-1zM33 9h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM10 10h1v1h-1zM11 10h1v1h-1zM14 10h1v1h-1zM15 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM19 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM30 10h1v1h-1zM31 10h1v1h-1zM32 10h1v1h-1zM1 11h1v1h-1zM3 11h1v1h-1zM5 11h1v1h-1zM7 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM16 11h1v1h-1zM18 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM24 11h1v1h-1zM30 11h1v1h-1zM32 11h1v1h-1zM3 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM13 12h1v1h-1zM15 12h1v1h-1zM17 12h1v1h-1zM18 12h1v1h-1zM19 12h1v1h-1zM21 12h1v1h-1zM22 12h1v1h-1zM23 12h1v1h-1zM25 12h1v1h-1zM26 12h1v1h-1zM27 12h1v1h-1zM2 13h1v1h-1zM4 13h1v1h-1zM6 13h1v1h-1zM7 13h1v1h-1zM10 13h1v1h-1zM11 13h1v1h-1zM12 13h1v1h-1zM14 13h1v1h-1zM15 13h1v1h-1zM19 13h1v1h-1zM20 13h1v1h-1zM21 13h1v1h-1zM25 13h1v1h-1zM27 13h1v1h-1zM28 13h1v1h-1zM29 13h1v1h-1zM30 13h1v1h-1zM33 13h1v1h-1zM1 14h1v1h-1zM2 14h1v1h-1zM3 14h1v1h-1zM4 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM12 14h1v1h-1zM17 14h1v1h-1zM18 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM24 14h1v1h-1zM28 14h1v1h-1zM30 14h1v1h-1zM31 14h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM7 15h1v1h-1zM8 15h1v1h-1zM9 15h1v1h-1zM10 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM17 15h1v1h-1zM18 15h1v1h-1zM20 15h1v1h-1zM24 15h1v1h-1zM26 15h1v1h-1zM27 15h1v1h-1zM28 15h1v1h-1zM32 15h1v1h-1zM3 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM15 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM20 16h1v1h-1zM21 16h1v1h-1zM22 16h1v1h-1zM23 16h1v1h-1zM24 16h1v1h-1zM25 16h1v1h-1zM26 16h1v1h-1zM27 16h1v1h-1zM4 17h1v1h-1zM5 17h1v1h-1zM6 17h1v1h-1zM7 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM13 17h1v1h-1zM16 17h1v1h-1zM17 17h1v1h-1zM18 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM24 17h1v1h-1zM27 17h1v1h-1zM29 17h1v1h-1zM30 17h1v1h-1zM32 17h1v1h-1zM1 18h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM11 18h1v1h-1zM13 18h1v1h-1zM16 18h1v1h-1zM17 18h1v1h-1zM18 18h1v1h-1zM19 18h1v1h-1zM22 18h1v1h-1zM24 18h1v1h-1zM26 18h1v1h-1zM30 18h1v1h-1zM31 18h1v1h-1zM1 19h1v1h-1zM3 19h1v1h-1zM4 19h1v1h-1zM5 19h1v1h-1zM7 19h1v1h-1zM8 19h1v1h-1zM11 19h1v1h-1zM12 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM19 19h1v1h-1zM24 19h1v1h-1zM25 19h1v1h-1zM26 19h1v1h-1zM28 19h1v1h-1zM30 19h1v1h-1zM32 19h1v1h-1zM1 20h1v1h-1zM2 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM10 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM23 20h1v1h-1zM28 20h1v1h-1zM32 20h1v1h-1zM33 20h1v1h-1zM3 21h1v1h-1zM4 21h1v1h-1zM6 21h1v1h-1zM7 21h1v1h-1zM10 21h1v1h-1zM11 21h1v1h-1zM17 21h1v1h-1zM23 21h1v1h-1zM25 21h1v1h-1zM27 21h1v1h-1zM29 21h1v1h-1zM30 21h1v1h-1zM32 21h1v1h-1zM33 21h1v1h-1zM1 22h1v1h-1zM5 22h1v1h-1zM8 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM11 22h1v1h-1zM14 22h1v1h-1zM15 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM21 22h1v1h-1zM24 22h1v1h-1zM26 22h1v1h-1zM28 22h1v1h-1zM31 22h1v1h-1zM32 22h1v1h-1zM3 23h1v1h-1zM5 23h1v1h-1zM6 23h1v1h-1zM7 23h1v1h-1zM9 23h1v1h-1zM13 23h1v1h-1zM15 23h1v1h-1zM16 23h1v1h-1zM19 23h1v1h-1zM21 23h1v1h-1zM24 23h1v1h-1zM29 23h1v1h-1zM30 23h1v1h-1zM31 23h1v1h-1zM32 23h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM5 24h1v1h-1zM9 24h1v1h-1zM10 24h1v1h-1zM11 24h1v1h-1zM14 24h1v1h-1zM16 24h1v1h-1zM17 24h1v1h-1zM18 24h1v1h-1zM19 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM25 24h1v1h-1zM26 24h1v1h-1zM28 24h1v1h-1zM30 24h1v1h-1zM33 24h1v1h-1zM1 25h1v1h-1zM2 25h1v1h-1zM5 25h1v1h-1zM7 25h1v1h-1zM8 25h1v1h-1zM9 25h1v1h-1zM12 25h1v1h-1zM13 25h1v1h-1zM14 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM19 25h1v1h-1zM20 25h1v1h-1zM21 25h1v1h-1zM22 25h1v1h-1zM23 25h1v1h-1zM24 25h1v1h-1zM25 25h1v1h-1zM26 25h1v1h-1zM27 25h1v1h-1zM28 25h1v1h-1zM29 25h1v1h-1zM9 26h1v1h-1zM13 26h1v1h-1zM14 26h1v1h-1zM15 26h1v1h-1zM16 26h1v1h-1zM17 26h1v1h-1zM19 26h1v1h-1zM25 26h1v1h-1zM29 26h1v1h-1zM31 26h1v1h-1zM1 27h1v1h-1zM2 27h1v1h-1zM3 27h1v1h-1zM4 27h1v1h-1zM5 27h1v1h-1zM6 27h1v1h-1zM7 27h1v1h-1zM9 27h1v1h-1zM10 27h1v1h-1zM12 27h1v1h-1zM13 27h1v1h-1zM15 27h1v1h-1zM16 27h1v1h-1zM17 27h1v1h-1zM18 27h1v1h-1zM22 27h1v1h-1zM23 27h1v1h-1zM25 27h1v1h-1zM27 27h1v1h-1zM29 27h1v1h-1zM30 27h1v1h-1zM32 27h1v1h-1zM1 28h1v1h-1zM7 28h1v1h-1zM10 28h1v1h-1zM11 28h1v1h-1zM15 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM19 28h1v1h-1zM21 28h1v1h-1zM22 28h1v1h-1zM25 28h1v1h-1zM29 28h1v1h-1zM32 28h1v1h-1zM1 29h1v1h-1zM3 29h1v1h-1zM4 29h1v1h-1zM5 29h1v1h-1zM7 29h1v1h-1zM9 29h1v1h-1zM10 29h1v1h-1zM14 29h1v1h-1zM19 29h1v1h-1zM20 29h1v1h-1zM21 29h1v1h-1zM25 29h1v1h-1zM26 29h1v1h-1zM27 29h1v1h-1zM28 29h1v1h-1zM29 29h1v1h-1zM30 29h1v1h-1zM32 29h1v1h-1zM33 29h1v1h-1zM1 30h1v1h-1zM3 30h1v1h-1zM4 30h1v1h-1zM5 30h1v1h-1zM7 30h1v1h-1zM12 30h1v1h-1zM13 30h1v1h-1zM17 30h1v1h-1zM18 30h1v1h-1zM20 30h1v1h-1zM22 30h1v1h-1zM23 30h1v1h-1zM24 30h1v1h-1zM27 30h1v1h-1zM28 30h1v1h-1zM29 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM1 31h1v1h-1zM3 31h1v1h-1zM4 31h1v1h-1zM5 31h1v1h-1zM7 31h1v1h-1zM12 31h1v1h-1zM17 31h1v1h-1zM19 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM23 31h1v1h-1zM24 31h1v1h-1zM27 31h1v1h-1zM28 31h1v1h-1zM29 31h1v1h-1zM31 31h1v1h-1zM1 32h1v1h-1zM7 32h1v1h-1zM10 32h1v1h-1zM13 32h1v1h-1zM18 32h1v1h-1zM19 32h1v1h-1zM20 32h1v1h-1zM21 32h1v1h-1zM22 32h1v1h-1zM24 32h1v1h-1zM25 32h1v1h-1zM1 33h1v1h-1zM2 33h1v1h-1zM3 33h1v1h-1zM4 33h1v1h-1zM5 33h1v1h-1zM6 33h1v1h-1zM7 33h1v1h-1zM9 33h1v1h-1zM12 33h1v1h-1zM16 33h1v1h-1zM17 33h1v1h-1zM18 33h1v1h-1zM22 33h1v1h-1zM23 33h1v1h-1zM24 33h1v1h-1zM25 33h1v1h-1zM27 33h1v1h-1zM33 33h1v1h-1z" fill="#0F172A"/></svg>
+      <div><b>Cài lên điện thoại</b><p class="hint" style="margin:6px 0 0">Mở Camera, quét mã này rồi làm theo hướng dẫn.</p></div>
+    </div>
+  </section>
+
+  <a class="btn ghost" href="./" id="openWeb">Dùng ngay trên trình duyệt</a>
+</main>
+
+<div id="arrow" class="hide" aria-hidden="true">
+  <span>Bấm nút Chia sẻ ở đây</span>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg>
+</div>
+
+<script>
+(function () {
+  var APP = 'https://accvnn.github.io/taskmaster/';
+  var SELF = APP + 'installapp';
+  var ua = navigator.userAgent;
+  var $ = function (id) { return document.getElementById(id); };
+  var show = function (id) { $(id).classList.remove('hide'); };
+  var hide = function (id) { $(id).classList.add('hide'); };
+
+  var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/i.test(ua);
+  var isMobile = isIOS || isAndroid;
+  var inApp = /Zalo|FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\/|TikTok|musical_ly|; wv\)/i.test(ua);
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+  // Đang mở từ app đã cài → vào thẳng TaskMaster
+  if (standalone) { location.replace('./'); return; }
+
+  function copy(text, btn) {
+    var ok = function () { btn.textContent = 'Đã chép – dán vào ' + (isIOS ? 'Safari' : 'Chrome'); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(ok, function () { prompt('Chép link này:', text); });
+    else prompt('Chép link này:', text);
+  }
+
+  // 1) Trình duyệt trong Zalo/Facebook: không cài được → mở trình duyệt thật
+  if (inApp) {
+    show('inapp');
+    $('copyLink').onclick = function () { copy(SELF, this); };
+    if (isAndroid) {
+      $('openChrome').href = 'intent://accvnn.github.io/taskmaster/installapp#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(SELF) + ';end';
+    } else {
+      hide('openChrome');
+      $('inappMsg').innerHTML = 'Bấm <b>•••</b> (hoặc biểu tượng la bàn) ở góc màn hình → <b>Mở bằng Safari</b>, hoặc chép link rồi dán vào Safari.';
+    }
+    hide('openWeb');
+    return;
+  }
+
+  // 2) iPhone / iPad: Apple không cho cài tự động → hướng dẫn 3 bước + mũi tên chỉ nút Chia sẻ
+  if (isIOS) {
+    show('ios');
+    if (/CriOS|FxiOS|EdgiOS/.test(ua)) {
+      $('iosNotSafari').textContent = 'Bạn đang dùng Chrome/Edge: nút Chia sẻ nằm ở thanh địa chỉ phía trên. Nếu không thấy "Thêm vào MH chính", hãy mở link này bằng Safari.';
+    } else {
+      show('arrow');
+      setTimeout(function () { hide('arrow'); }, 12000);
+    }
+    return;
+  }
+
+  // 3) Android / máy tính: hộp thoại cài 1 chạm của Chrome/Edge
+  show('oneTap');
+  if (!isMobile) show('qrBox');
+  var deferred = null, btn = $('installBtn');
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    btn.disabled = false; btn.textContent = 'Cài đặt TaskMaster';
+    hide('manual');
+  });
+  btn.onclick = function () {
+    if (!deferred) return;
+    var d = deferred; deferred = null;
+    d.prompt();
+    d.userChoice.then(function (c) {
+      if (c.outcome === 'accepted') { hide('oneTap'); show('installed'); }
+      else { btn.disabled = true; btn.textContent = 'Đã huỷ – tải lại trang để cài'; }
+    });
+  };
+  window.addEventListener('appinstalled', function () { hide('oneTap'); hide('manual'); show('installed'); });
+
+  // Không có hộp thoại sau 3 giây: đã cài rồi, hoặc trình duyệt không hỗ trợ → hướng dẫn thủ công
+  setTimeout(function () {
+    if (deferred || !$('installed').classList.contains('hide')) return;
+    hide('oneTap');
+    var steps = isAndroid
+      ? ['Mở link này bằng <b>Chrome</b>.', 'Bấm menu <b>⋮</b> góc trên bên phải.', 'Chọn <b>Cài đặt ứng dụng</b> (hoặc <b>Thêm vào màn hình chính</b>) → <b>Cài đặt</b>.']
+      : ['Mở link này bằng <b>Chrome</b> hoặc <b>Edge</b>.', 'Bấm biểu tượng <b>cài đặt</b> ⊕ ở cuối thanh địa chỉ, hoặc menu <b>⋮</b> → <b>Cài đặt TaskMaster</b>.', 'Nếu không có mục này, có thể máy đã cài TaskMaster rồi – tìm trong menu ứng dụng.'];
+    $('manualSteps').innerHTML = steps.map(function (s) { return '<li><div>' + s + '</div></li>'; }).join('');
+    show('manual');
+  }, 3000);
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>
