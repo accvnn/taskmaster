@@ -32,8 +32,6 @@
     #fallback { display:none; }
     a.btn, button.btn { display:inline-block; background:var(--primary); color:#fff; border:0;
       border-radius:10px; padding:10px 16px; font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; }
-    #install { position:fixed; right:16px; bottom:16px; z-index:20; display:none;
-      box-shadow:0 6px 20px rgba(220,38,38,.35); }
     #offline { position:fixed; inset:0; display:none; flex-direction:column; align-items:center;
       justify-content:center; gap:12px; background:var(--bg); z-index:30; text-align:center; padding:16px; }
   </style>
@@ -57,7 +55,6 @@
     <button class="btn" onclick="location.reload()">Thử lại</button>
   </div>
 
-  <button class="btn" id="install">Cài ứng dụng</button>
 
   <script>
     // ===== CẤU HÌNH =====
@@ -103,16 +100,32 @@
     window.addEventListener('offline', function () { document.getElementById('offline').style.display = 'flex'; });
     window.addEventListener('online', function () { document.getElementById('offline').style.display = 'none'; });
 
-    // Nút "Cài ứng dụng" (Chrome/Edge trên Android, Windows, macOS)
-    var deferred = null, btn = document.getElementById('install');
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault(); deferred = e; btn.style.display = 'inline-block';
-      setTimeout(function () { btn.style.display = 'none'; }, 15000);
+    // ===== Cài ứng dụng: nút nằm trên sidebar TaskMaster (trong web app) =====
+    // Web app gửi 'tm-pwa-hello' / 'tm-pwa-install' lên đây; trang này trả lời trạng thái và mở hộp thoại cài.
+    var deferred = null, lastResult = null, appWin = null;
+    var installed = window.matchMedia('(display-mode: standalone)').matches ||
+                    window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+                    navigator.standalone === true;
+    function isTrustedOrigin(o) { return /^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.googleusercontent\.com$/.test(o); }
+    function sendState() {
+      if (!appWin) return;
+      try {
+        appWin.postMessage({ type: 'tm-pwa-state', canPrompt: !!deferred, installed: installed, result: lastResult }, '*');
+      } catch (e) {}
+    }
+    window.addEventListener('message', function (e) {
+      if (!isTrustedOrigin(e.origin) || !e.data) return;
+      if (e.data.type === 'tm-pwa-hello') { appWin = e.source; sendState(); }
+      else if (e.data.type === 'tm-pwa-install' && deferred) {
+        appWin = e.source;
+        var d = deferred; deferred = null;
+        d.prompt();
+        d.userChoice.then(function (c) { lastResult = c.outcome; if (c.outcome === 'accepted') installed = true; sendState(); lastResult = null; })
+          .catch(function () { sendState(); });
+      }
     });
-    btn.addEventListener('click', function () {
-      btn.style.display = 'none';
-      if (deferred) { deferred.prompt(); deferred = null; }
-    });
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; sendState(); });
+    window.addEventListener('appinstalled', function () { installed = true; deferred = null; sendState(); });
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
