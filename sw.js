@@ -1,6 +1,6 @@
 // Service worker tối giản: chỉ lưu "vỏ" app (trang mở, icon) để app mở nhanh và báo lỗi mạng gọn gàng.
 // Dữ liệu TaskMaster vẫn luôn lấy trực tiếp từ Google Apps Script, không lưu cache.
-const CACHE = 'taskmaster-shell-v9';
+const CACHE = 'taskmaster-shell-v10';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-32.png'];
 
