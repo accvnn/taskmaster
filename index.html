@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TaskMaster</title>
+  <meta name="theme-color" content="#DC2626">
+  <meta name="description" content="TaskMaster – quản lý công việc VietNamNet JSC">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="TaskMaster">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <style>
+    :root { --primary:#DC2626; --bg:#F8FAFC; --text:#0F172A; --muted:#64748B; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; overflow:hidden; }
+    #app { position:fixed; inset:0; width:100%; height:100%; border:0;
+      padding-top:env(safe-area-inset-top); background:var(--bg); }
+    #splash { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; gap:16px; background:var(--bg); z-index:10; transition:opacity .3s; text-align:center; padding:16px; }
+    #splash.hide { opacity:0; pointer-events:none; }
+    #splash img { width:72px; height:72px; border-radius:18px; }
+    #splash h1 { margin:0; font-size:20px; }
+    #splash p { margin:0; color:var(--muted); font-size:14px; }
+    .spin { width:28px; height:28px; border:3px solid #FEE2E2; border-top-color:var(--primary);
+      border-radius:50%; animation:s 0.8s linear infinite; }
+    @keyframes s { to { transform:rotate(360deg); } }
+    #fallback { display:none; }
+    a.btn, button.btn { display:inline-block; background:var(--primary); color:#fff; border:0;
+      border-radius:10px; padding:10px 16px; font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; }
+    #install { position:fixed; right:16px; bottom:16px; z-index:20; display:none;
+      box-shadow:0 6px 20px rgba(220,38,38,.35); }
+    #offline { position:fixed; inset:0; display:none; flex-direction:column; align-items:center;
+      justify-content:center; gap:12px; background:var(--bg); z-index:30; text-align:center; padding:16px; }
+  </style>
+</head>
+<body>
+  <div id="splash">
+    <img src="icon-192.png" alt="">
+    <h1>TaskMaster</h1>
+    <div class="spin"></div>
+    <p id="splashMsg">Đang mở TaskMaster…</p>
+    <div id="fallback">
+      <p style="margin-bottom:10px">Tải lâu hoặc không đăng nhập được?</p>
+      <a class="btn" id="openDirect" href="#">Mở trực tiếp</a>
+    </div>
+  </div>
+
+  <div id="offline">
+    <img src="icon-192.png" alt="" width="64" height="64" style="border-radius:16px">
+    <h1 style="margin:0;font-size:18px">Không có kết nối mạng</h1>
+    <p style="margin:0;color:var(--muted);font-size:14px">TaskMaster cần Internet. Kiểm tra mạng rồi thử lại.</p>
+    <button class="btn" onclick="location.reload()">Thử lại</button>
+  </div>
+
+  <button class="btn" id="install">Cài ứng dụng</button>
+
+  <script>
+    // ===== CẤU HÌNH =====
+    // Link web app Apps Script (deployment /exec). Đổi ở đây nếu tạo deployment mới.
+    var WEBAPP_URL = 'https://script.google.com/a/macros/vietnamnet.vn/s/AKfycbx12vl-2gqmp_j69vge2Qe-X1OSMozi7ryX2vFDVwcuR2MQht88wMcEjyECvKqzXPEK/exec';
+
+    // Giữ nguyên tham số trên URL (deep link, vd ?tab=report&id=...) khi chuyển vào web app
+    var target = WEBAPP_URL + (location.search && location.search !== '?' ? location.search : '');
+    document.getElementById('openDirect').href = target;
+
+    // iPhone/iPad: Safari chặn cookie đăng nhập Google trong khung nhúng → mở thẳng web app.
+    // Có thể ép chế độ bằng ?mode=iframe hoặc ?mode=redirect
+    var params = new URLSearchParams(location.search);
+    var forced = params.get('mode');
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var useRedirect = forced ? forced === 'redirect' : isIOS;
+
+    if (!navigator.onLine) {
+      document.getElementById('offline').style.display = 'flex';
+    } else if (useRedirect) {
+      location.replace(target);
+    } else {
+      var f = document.createElement('iframe');
+      f.id = 'app';
+      f.title = 'TaskMaster';
+      f.allow = 'clipboard-read; clipboard-write; fullscreen';
+      f.src = target;
+      f.addEventListener('load', function () {
+        document.getElementById('splash').classList.add('hide');
+      });
+      document.body.appendChild(f);
+      // Nếu sau 12 giây vẫn chưa tải xong → hiện nút mở trực tiếp
+      setTimeout(function () {
+        var sp = document.getElementById('splash');
+        if (!sp.classList.contains('hide')) {
+          document.getElementById('fallback').style.display = 'block';
+          document.getElementById('splashMsg').textContent = 'Vẫn đang tải…';
+        }
+      }, 12000);
+    }
+
+    window.addEventListener('offline', function () { document.getElementById('offline').style.display = 'flex'; });
+    window.addEventListener('online', function () { document.getElementById('offline').style.display = 'none'; });
+
+    // Nút "Cài ứng dụng" (Chrome/Edge trên Android, Windows, macOS)
+    var deferred = null, btn = document.getElementById('install');
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault(); deferred = e; btn.style.display = 'inline-block';
+      setTimeout(function () { btn.style.display = 'none'; }, 15000);
+    });
+    btn.addEventListener('click', function () {
+      btn.style.display = 'none';
+      if (deferred) { deferred.prompt(); deferred = null; }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+    }
+  </script>
+</body>
+</html>
