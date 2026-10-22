@@ -118,12 +118,15 @@
     function sendState() {
       if (!appWin) return;
       try {
-        appWin.postMessage({ type: 'tm-pwa-state', canPrompt: !!deferred, installed: installed, result: lastResult }, '*');
+        appWin.postMessage({ type: 'tm-pwa-state', canPrompt: true, installed: installed, result: lastResult }, '*');
       } catch (e) {}
     }
     window.addEventListener('message', function (e) {
       if (!isTrustedOrigin(e.origin) || !e.data) return;
       if (e.data.type === 'tm-pwa-hello') { appWin = e.source; sendState(); }
+      else if (e.data.type === 'tm-pwa-install' && !deferred) {
+        location.href = 'installapp'; // trình duyệt không bật hộp thoại (đã cài / đã từng huỷ) → trang cài có hướng dẫn
+      }
       else if (e.data.type === 'tm-pwa-install' && deferred) {
         appWin = e.source;
         var d = deferred; deferred = null;

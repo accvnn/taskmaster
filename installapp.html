@@ -109,7 +109,8 @@
   </section>
 
   <section id="installed" class="card hide" style="text-align:center">
-    <p class="done" style="margin:0 0 12px">✓ Đã cài TaskMaster</p>
+    <p class="done" style="margin:0 0 12px" id="installedMsg">✓ Đã cài TaskMaster</p>
+    <p class="hint hide" id="installedHint" style="margin:-4px 0 14px">Mở từ icon TaskMaster trên Desktop / menu Start, hoặc bấm nút dưới. Muốn cài lại: gỡ app cũ trước (chrome://apps → chuột phải TaskMaster → Gỡ).</p>
     <a class="btn" href="./">Mở TaskMaster</a>
   </section>
 
@@ -197,27 +198,47 @@
     btn.disabled = false; btn.textContent = 'Cài đặt TaskMaster';
     hide('manual');
   });
+  var manualSteps = isAndroid
+    ? ['Bấm menu <b>⋮</b> của Chrome (góc trên bên phải).', 'Chọn <b>Cài đặt ứng dụng</b> (hoặc <b>Thêm vào màn hình chính</b>).', 'Bấm <b>Cài đặt</b> – xong!']
+    : ['Nhìn lên <b>cuối thanh địa chỉ</b> (bên phải) – bấm biểu tượng <b>cài đặt</b> <span style="display:inline-flex;width:20px;height:20px;border:2px solid currentColor;border-radius:5px;align-items:center;justify-content:center;font-size:12px;vertical-align:-4px">↓</span> nếu có.',
+       'Hoặc bấm menu <b>⋮</b> (Chrome) / <b>…</b> (Edge) góc trên bên phải → <b>Truyền, lưu và chia sẻ</b> → <b>Cài đặt trang dưới dạng ứng dụng</b> (Edge: <b>Ứng dụng</b> → <b>Cài đặt trang này dưới dạng ứng dụng</b>).',
+       'Bấm <b>Cài đặt</b> – icon TaskMaster sẽ có trên Desktop và menu Start.'];
+  function showManual() {
+    $('manualSteps').innerHTML = manualSteps.map(function (s) { return '<li><div>' + s + '</div></li>'; }).join('');
+    show('manual');
+    $('manual').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function showInstalled() {
+    hide('oneTap'); hide('manual'); show('installed');
+  }
   btn.onclick = function () {
-    if (!deferred) return;
+    if (!deferred) { showManual(); return; }
     var d = deferred; deferred = null;
     d.prompt();
     d.userChoice.then(function (c) {
-      if (c.outcome === 'accepted') { hide('oneTap'); show('installed'); }
-      else { btn.disabled = true; btn.textContent = 'Đã huỷ – tải lại trang để cài'; }
+      if (c.outcome === 'accepted') showInstalled();
+      else { btn.textContent = 'Cài đặt TaskMaster'; showManual(); }
     });
   };
-  window.addEventListener('appinstalled', function () { hide('oneTap'); hide('manual'); show('installed'); });
+  window.addEventListener('appinstalled', showInstalled);
 
-  // Không có hộp thoại sau 3 giây: đã cài rồi, hoặc trình duyệt không hỗ trợ → hướng dẫn thủ công
+  // Máy đã cài TaskMaster chưa? (Chrome/Edge hỗ trợ)
+  if (navigator.getInstalledRelatedApps) {
+    navigator.getInstalledRelatedApps().then(function (apps) {
+      if (apps && apps.length && !deferred) {
+        showInstalled();
+        $('installedMsg').innerHTML = '✓ Máy này đã cài TaskMaster';
+        $('installedHint').classList.remove('hide');
+      }
+    }).catch(function () {});
+  }
+
+  // Sau 2 giây vẫn chưa có hộp thoại cài tự động → nút vẫn bấm được, bấm sẽ hiện hướng dẫn cài thủ công
   setTimeout(function () {
     if (deferred || !$('installed').classList.contains('hide')) return;
-    hide('oneTap');
-    var steps = isAndroid
-      ? ['Mở link này bằng <b>Chrome</b>.', 'Bấm menu <b>⋮</b> góc trên bên phải.', 'Chọn <b>Cài đặt ứng dụng</b> (hoặc <b>Thêm vào màn hình chính</b>) → <b>Cài đặt</b>.']
-      : ['Mở link này bằng <b>Chrome</b> hoặc <b>Edge</b>.', 'Bấm biểu tượng <b>cài đặt</b> ⊕ ở cuối thanh địa chỉ, hoặc menu <b>⋮</b> → <b>Cài đặt TaskMaster</b>.', 'Nếu không có mục này, có thể máy đã cài TaskMaster rồi – tìm trong menu ứng dụng.'];
-    $('manualSteps').innerHTML = steps.map(function (s) { return '<li><div>' + s + '</div></li>'; }).join('');
-    show('manual');
-  }, 3000);
+    btn.disabled = false; btn.textContent = 'Cài đặt TaskMaster';
+    $('oneTapHint').textContent = 'Trình duyệt chưa bật cài 1 chạm – bấm để xem cách cài (mất 10 giây).';
+  }, 2000);
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
 })();
