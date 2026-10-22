@@ -41,9 +41,21 @@
     .qr { display:flex; gap:16px; align-items:center; }
     .qr svg { flex:0 0 auto; border-radius:8px; border:1px solid var(--line); }
     .hide { display:none !important; }
-    #arrow { position:fixed; left:50%; bottom:calc(8px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    #arrow { position:fixed; left:50%; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:50; transform:translateX(-50%);
       color:var(--red); animation:bob 1s ease-in-out infinite; pointer-events:none; }
     #arrow span { display:block; font-size:13px; font-weight:700; background:var(--red); color:#fff; border-radius:999px; padding:6px 12px; margin-bottom:4px; white-space:nowrap; }
+    .sbar { display:flex; align-items:center; gap:8px; background:#F1F5F9; border-radius:999px; padding:6px; margin:0 0 14px; }
+    .sb-btn { flex:0 0 auto; min-width:40px; height:40px; border-radius:999px; background:#fff; display:flex; align-items:center; justify-content:center;
+      font-size:18px; font-weight:700; color:#334155; box-shadow:0 1px 3px rgba(0,0,0,.08); padding:0 8px; }
+    .sb-url { flex:1; height:40px; border-radius:999px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; color:#475569; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #sbarOld { justify-content:space-around; background:#F1F5F9; border-radius:12px; }
+    #sbarOld .sb-btn { background:transparent; box-shadow:none; }
+    .sb-btn.hl { outline:3px solid var(--red); outline-offset:2px; color:var(--red); animation:pulse 1.2s ease-in-out infinite; }
+    #sbarOld .sb-btn.hl { background:#fff; }
+    @keyframes pulse { 50% { outline-color:rgba(220,38,38,.25); } }
+    #arrow.right { left:auto; right:14px; transform:none; bottom:calc(env(safe-area-inset-bottom) + 78px); text-align:right; animation-name:bobr; }
+    #arrow.right svg { margin-right:18px; }
+    @keyframes bobr { 50% { transform:translateY(8px); } }
     @keyframes bob { 50% { transform:translate(-50%, 8px); } }
     @media (prefers-reduced-motion: reduce) { #arrow { animation:none; } }
   </style>
@@ -75,12 +87,22 @@
 
   <!-- iPhone / iPad -->
   <section id="ios" class="card hide">
-    <ol class="steps">
-      <li><div>Bấm nút <b>Chia sẻ</b>
-        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
-        ở thanh dưới Safari <span class="hint" style="display:block;margin:2px 0 0">(iOS mới: bấm <b>•••</b> trước rồi chọn Chia sẻ)</span></div></li>
-      <li><div>Kéo xuống, chọn <b>Thêm vào MH chính</b>
-        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></div></li>
+    <!-- Mô phỏng thanh dưới Safari để chỉ đúng nút -->
+    <div class="sbar" id="sbarNew" aria-hidden="true">
+      <span class="sb-btn">‹</span><span class="sb-url">accvnn.github.io</span><span class="sb-btn hl">•••</span>
+    </div>
+    <div class="sbar hide" id="sbarOld" aria-hidden="true">
+      <span class="sb-btn">‹</span><span class="sb-btn">›</span><span class="sb-btn hl"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span><span class="sb-btn">▢</span><span class="sb-btn">⧉</span>
+    </div>
+    <ol class="steps" id="iosNew">
+      <li><div>Bấm nút <b>•••</b> ở <b>góc dưới bên phải</b> Safari</div></li>
+      <li><div>Chọn <b>Chia sẻ</b> <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></div></li>
+      <li><div>Kéo xuống, chọn <b>Thêm vào MH chính</b> <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg><span class="hint" style="display:block;margin:2px 0 0">Không thấy? Bấm <b>Xem thêm</b> ở cuối danh sách.</span></div></li>
+      <li><div>Bấm <b>Thêm</b> – xong!</div></li>
+    </ol>
+    <ol class="steps hide" id="iosOld">
+      <li><div>Bấm nút <b>Chia sẻ</b> <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> ở <b>giữa thanh dưới</b> Safari</div></li>
+      <li><div>Kéo xuống, chọn <b>Thêm vào MH chính</b> <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></div></li>
       <li><div>Bấm <b>Thêm</b> ở góc trên – xong!</div></li>
     </ol>
     <p class="hint" id="iosNotSafari"></p>
@@ -103,7 +125,7 @@
 </main>
 
 <div id="arrow" class="hide" aria-hidden="true">
-  <span>Bấm nút Chia sẻ ở đây</span>
+  <span id="arrowText">Bấm ••• ở đây</span>
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg>
 </div>
 
@@ -151,8 +173,17 @@
     if (/CriOS|FxiOS|EdgiOS/.test(ua)) {
       $('iosNotSafari').textContent = 'Bạn đang dùng Chrome/Edge: nút Chia sẻ nằm ở thanh địa chỉ phía trên. Nếu không thấy "Thêm vào MH chính", hãy mở link này bằng Safari.';
     } else {
+      // Safari iOS 26+: thanh dưới gọn (‹ · địa chỉ · •••) → Chia sẻ nằm trong menu •••
+      // Safari iOS cũ: nút Chia sẻ ở giữa thanh dưới
+      var v = ua.match(/Version\/(\d+)/);
+      var oldSafari = v && +v[1] < 26;
+      if (oldSafari) {
+        hide('iosNew'); show('iosOld'); hide('sbarNew'); show('sbarOld');
+        $('arrowText').textContent = 'Bấm nút Chia sẻ ở đây';
+      } else {
+        $('arrow').classList.add('right');
+      }
       show('arrow');
-      setTimeout(function () { hide('arrow'); }, 12000);
     }
     return;
   }
