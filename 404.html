@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskMaster đã chuyển địa chỉ</title>
+  <meta name="robots" content="noindex">
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff;color:#222;
+         display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:16px;text-align:center}
+    a{color:#0b57d0;font-weight:600}
+  </style>
+  <script>
+    // Địa chỉ mới của TaskMaster trên Cloudflare
+    var NEW_URL = 'https://taskmaster.vietnamnet.workers.dev/';
+
+    // Gỡ service worker cũ trên github.io để app không mở lại bản cache cũ
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.unregister(); });
+      });
+      if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); });
+    }
+
+    // Giữ nguyên đường dẫn + tham số deep link (vd /taskmaster/installapp → NEW_URL/installapp)
+    var path = location.pathname.replace(/^\/taskmaster\/*/, '').replace(/^index\.html$/, '');
+    location.replace(NEW_URL + path + location.search + location.hash);
+  </script>
+</head>
+<body>
+  <p>TaskMaster đã chuyển sang địa chỉ mới.<br>
+     Nếu trang không tự chuyển, bấm vào đây: <a id="lnk" href="https://taskmaster.vietnamnet.workers.dev/">taskmaster.vietnamnet.workers.dev</a></p>
+</body>
+</html>
